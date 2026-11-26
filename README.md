@@ -140,3 +140,4 @@ Elles changent à chaque `npm run setup -- --reset`. Elles sont affichées par `
 
 - Photo du stade : [« Stade Vélodrome 1 »](https://commons.wikimedia.org/wiki/File:Stade_V%C3%A9lodrome_1.jpg), Zakarie Faibis, licence [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), via Wikimedia Commons (`web/img/velodrome.jpg`, redimensionnée en 1920 px).
 - Écussons : créations stylisées aux couleurs des clubs (`web/crests.js`), pas les logos officiels. Projet étudiant sans lien avec l'Olympique de Marseille ni le Paris Saint-Germain.
+- Logos locaux (optionnel) : si des fichiers `web/img/logos/om.png` et `psg.png` (ou `.svg`, `.webp`) sont présents sur le poste, l'interface les affiche à la place des écussons. Ce dossier est exclu de Git : les logos officiels sont des marques déposées et ne sont pas distribués avec le projet.

@@ -1,3 +1,5 @@
-.env
-node_modules/
 data/
+node_modules/
+.env
+# Logos officiels ajoutés localement pour la soutenance : jamais versionnés
+web/img/logos/

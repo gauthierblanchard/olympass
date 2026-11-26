@@ -1,6 +1,6 @@
 // Olympass : interface web (accueil, connexion, supporter, club, portique, vérification).
 import { seatView3D } from "./seatview.js";
-import { crest } from "./crests.js";
+import { crest, detectLocalLogos } from "./crests.js";
 
 /** Bandeau du match sur fond de photo du Vélodrome. */
 function matchStrip(m, extra = "") {
@@ -633,6 +633,7 @@ window.addEventListener("hashchange", async () => {
   render();
 });
 
+await detectLocalLogos();
 state.config = await api("GET", "/config");
 await loadMe();
 renderUserChip();

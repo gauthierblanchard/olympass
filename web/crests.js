@@ -6,7 +6,29 @@ const TEAMS = {
   PSG: { label: "PSG", top: "#0b2a5b", bottom: "#0b2a5b", ink: "#ffffff", stroke: "#0b1f3a", band: "#d4213d" },
 };
 
+// Logos fournis localement par l'équipe (web/img/logos/om.png, psg.png), exclus de Git.
+// S'ils sont absents, on affiche les écussons stylisés ci-dessous.
+const localLogos = {};
+
+export async function detectLocalLogos() {
+  for (const code of Object.keys(TEAMS)) {
+    for (const ext of ["png", "svg", "webp"]) {
+      const url = `img/logos/${code.toLowerCase()}.${ext}`;
+      try {
+        const r = await fetch(url, { method: "HEAD" });
+        if (r.ok && (r.headers.get("content-type") || "").startsWith("image/")) {
+          localLogos[code] = url;
+          break;
+        }
+      } catch {}
+    }
+  }
+}
+
 export function crest(code, size = 56) {
+  if (localLogos[code]) {
+    return `<img src="${localLogos[code]}" alt="${code}" width="${size}" height="${size}" style="object-fit:contain;flex:none" />`;
+  }
   const t = TEAMS[code];
   const id = `cr-${code}-${size}`;
   const shield = "M50 4 L92 16 V52 C92 78 72 94 50 102 C28 94 8 78 8 52 V16 Z";
