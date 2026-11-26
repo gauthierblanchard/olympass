@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <title>Olympass</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 720px; margin: 40px auto; padding: 0 16px; }
+    code { background: #f2f2f2; padding: 2px 4px; }
+  </style>
+</head>
+<body>
+  <!-- Page provisoire : à remplacer par les vues supporter, club, contrôleur et vérification. -->
+  <h1>Olympass</h1>
+  <p>API connectée au XRPL Testnet. Club émetteur : <code id="club">…</code></p>
+  <ul id="supporters"></ul>
+  <script>
+    fetch("/api/config").then((r) => r.json()).then((c) => {
+      document.getElementById("club").textContent = c.club;
+      document.getElementById("supporters").innerHTML = Object.entries(c.supporters)
+        .map(([n, a]) => `<li>${n} : <code>${a}</code></li>`).join("");
+    });
+  </script>
+</body>
+</html>
