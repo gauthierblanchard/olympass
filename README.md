@@ -93,6 +93,12 @@ La vue 3D est une projection perspective calculée dans le navigateur à partir 
 | POST | `/api/scan` | Portique : vérifier le QR et brûler le billet |
 | GET | `/api/stats` | Indicateurs et journal d'activité du club |
 
+**Vidéo du parcours utilisateur** (serveur lancé, Chrome installé) :
+
+```bash
+npm run video        # enregistre video/olympass-parcours.webm (environ 4 min, transactions réelles sur le Testnet)
+```
+
 ## Architecture
 
 ```
