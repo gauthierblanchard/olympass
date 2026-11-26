@@ -2,6 +2,7 @@
 // PoC : le serveur détient les seeds de test des supporters pour simplifier la démo.
 // En production, chaque supporter signerait dans son propre wallet (Xaman, GemWallet...).
 import express from "express";
+import QRCode from "qrcode";
 import { loadAll } from "../src/wallets.js";
 import { explorerTx } from "../src/xrpl-client.js";
 import * as T from "../src/tickets.js";
@@ -73,7 +74,10 @@ app.post("/api/tickets/:id/resale", route(async (req) => {
 app.get("/api/tickets/:id/verify", route(async (req) => T.verifyTicket(req.params.id, club.address, supporterAddresses())));
 
 // QR d'entrée signé par le détenteur (dans une vraie app, signé côté téléphone)
-app.post("/api/tickets/:id/qr", route(async (req) => T.createEntryProof(supporter(req.body.holder), req.params.id)));
+app.post("/api/tickets/:id/qr", route(async (req) => {
+  const proof = T.createEntryProof(supporter(req.body.holder), req.params.id);
+  return { proof, image: await QRCode.toDataURL(JSON.stringify(proof), { margin: 1, width: 280 }) };
+}));
 
 // Portique : vérifie le QR et brûle le billet
 app.post("/api/scan", route(async (req) => {

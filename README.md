@@ -56,11 +56,22 @@ Il affiche chaque étape avec le lien de la transaction sur l'explorateur :
 7. Bob présente son QR signé au portique : entrée validée, billet brûlé.
 8. Second passage avec le même QR : **refusé**.
 
-**API + interface web :**
+**Interface web :**
 
 ```bash
 npm start            # http://localhost:3000
 ```
+
+| Vue | Usage |
+| --- | --- |
+| Club | Émettre des billets, suivre leur détenteur et leur statut |
+| Supporter | Choisir Alice, Bob ou Charlie ; acheter, revendre au club, tenter une vente directe (refusée), afficher le QR d'entrée |
+| Portique | Scanner le QR présenté : entrée validée et billet brûlé, ou entrée refusée |
+| Vérifier | Contrôler un billet à partir de son identifiant |
+
+Le journal à droite affiche chaque transaction avec son lien vers l'explorateur.
+
+**API REST** utilisée par l'interface :
 
 | Méthode | Route | Rôle |
 | --- | --- | --- |
@@ -72,7 +83,7 @@ npm start            # http://localhost:3000
 | POST | `/api/tickets/:id/transfer` | Démo fraude : transfert direct `{from, to}` |
 | POST | `/api/tickets/:id/resale` | Revendre via la bourse officielle `{seller}` |
 | GET | `/api/tickets/:id/verify` | Vérification publique d'un billet |
-| POST | `/api/tickets/:id/qr` | Générer le QR d'entrée signé `{holder}` |
+| POST | `/api/tickets/:id/qr` | Générer le QR d'entrée signé `{holder}` (preuve + image) |
 | POST | `/api/scan` | Portique : vérifier le QR et brûler le billet |
 
 ## Architecture
@@ -88,7 +99,7 @@ olympass/
 │   ├── setup-wallets.js création des comptes via le faucet
 │   └── demo.js          scénario complet
 ├── server/index.js      API Express
-└── web/                 interface (en cours)
+└── web/                 interface : index.html, app.js, style.css
 ```
 
 **Séparation on-chain / off-chain**
