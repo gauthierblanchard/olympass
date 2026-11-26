@@ -249,3 +249,10 @@ th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: u
 .ticket .main { background:
   linear-gradient(135deg, rgba(11, 31, 58, 0.97) 0%, rgba(18, 48, 90, 0.9) 100%),
   url("img/velodrome.jpg") center / cover; }
+
+/* ---------- Équivalent en euros (taux fictif de démo) ---------- */
+.eur { color: var(--muted); font-weight: 500; font-size: 0.85em; }
+.seat-row .price { text-align: right; line-height: 1.1; }
+.seat-row .price .eur { display: block; font-size: 0.75rem; }
+.ticket .stub .eur-stub { color: var(--ink); font-weight: 700; font-size: 0.8rem; }
+.user-chip .who small { white-space: nowrap; }

@@ -37,6 +37,10 @@ const avatar = (u, cls = "") => `<span class="avatar ${cls}" style="background:$
 const shortAddr = (a) => (a ? `${a.slice(0, 6)}…${a.slice(-4)}` : "");
 const fmtDate = (d) => new Date(`${d}T12:00:00`).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
 const xrp = (n) => `${Number(n).toLocaleString("fr-FR", { maximumFractionDigits: 2 })} XRP`;
+/** Équivalent en euros au taux fictif de démo fourni par le serveur. */
+const eur = (n) =>
+  (Number(n) * (state.config?.eurPerXrp ?? 2.5)).toLocaleString("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 2 });
+const money = (n) => `${xrp(n)} <span class="eur">≈ ${eur(n)}</span>`;
 
 function toast(text, status = "ok", links = {}) {
   const el = document.createElement("div");
@@ -99,7 +103,7 @@ function login(user) {
 function renderUserChip() {
   const me = state.me;
   $("#user-chip").innerHTML = me
-    ? `${avatar(me)}<div class="who"><strong>${esc(me.name)}</strong><br><small>${xrp(me.balance)}</small></div>
+    ? `${avatar(me)}<div class="who"><strong>${esc(me.name)}</strong><br><small>${xrp(me.balance)} · ≈ ${eur(me.balance)}</small></div>
        <button data-logout>Changer</button>`
     : `<button class="primary" onclick="location.hash='#/login'">Se connecter</button>`;
 }
@@ -129,7 +133,7 @@ function ticketHTML(t, { actions = "", proof = true } = {}) {
         </div>
       </div>
       <div class="stub">
-        <span class="price">${esc(s.prix)}</span><small>XRP</small>
+        <span class="price">${esc(s.prix)}</span><small>XRP</small><small class="eur-stub">≈ ${eur(s.prix)}</small>
         <span class="badge ok" title="Émis par l'adresse officielle du club">✓ Officiel</span>
       </div>
     </div>
@@ -290,7 +294,7 @@ pages.fan = async () => {
                   <div class="where"><strong>Bloc ${esc(t.seat?.bloc)} · Rang ${esc(t.seat?.rang)} · Siège ${esc(t.seat?.siege)}</strong>
                   <span class="muted" style="font-size:.85rem">Billet officiel · revente encadrée</span></div>
                   <button class="ghost" data-view3d="${esc(t.nftId)}" data-src="sale">Vue 3D</button>
-                  <span class="price">${esc(t.seat?.prix)} XRP</span>
+                  <span class="price">${esc(t.seat?.prix)} XRP<small class="eur">≈ ${eur(t.seat?.prix)}</small></span>
                   <button class="primary" data-buy="${esc(t.nftId)}">Acheter</button>
                 </div>`,
               )
@@ -316,7 +320,7 @@ pages.fan = async () => {
     <div class="fan-head">
       <div class="wallet-card">${avatar(me, "lg")}<div><h1>Salut ${esc(me.name)} 👋</h1>
         <a class="mono" href="${EXPLORER}/accounts/${esc(me.address)}" target="_blank">${esc(me.address)} ↗</a></div></div>
-      <div class="card" style="padding:16px 22px"><div class="muted" style="font-size:.85rem">Solde du wallet</div><div class="balance" style="font-size:1.6rem;font-weight:800">${xrp(me.balance)}</div></div>
+      <div class="card" style="padding:16px 22px"><div class="muted" style="font-size:.85rem">Solde du wallet</div><div class="balance" style="font-size:1.6rem;font-weight:800">${xrp(me.balance)}</div><div class="eur">≈ ${eur(me.balance)}</div><div class="muted" style="font-size:.72rem;margin-top:4px">Taux fictif de démo : 1 XRP = ${eur(1)}</div></div>
     </div>
     ${matchStrip(state.config.match)}
     <div class="tabs">
@@ -367,7 +371,7 @@ document.addEventListener("click", async (e) => {
   if (b.dataset.resale) {
     const t = findTicket(b.dataset.resale);
     openModal(`<div class="big">↩</div><h2>Revendre ce billet ?</h2>
-      <p>Le club vous le rachète au prix facial de <b>${esc(t.seat.prix)} XRP</b> et le remet en vente pour un autre supporter. Pas de spéculation possible.</p>
+      <p>Le club vous le rachète au prix facial de <b>${esc(t.seat.prix)} XRP (≈ ${eur(t.seat.prix)})</b> et le remet en vente pour un autre supporter. Pas de spéculation possible.</p>
       <div class="actions"><button data-close>Annuler</button><button class="primary" data-confirm-resale="${esc(t.nftId)}">Revendre ${esc(t.seat.prix)} XRP</button></div>`);
   }
 
@@ -384,7 +388,7 @@ document.addEventListener("click", async (e) => {
 
   if (b.dataset.transfer) {
     const users = (await api("GET", "/users")).filter((u) => u.id !== me.id);
-    openModal(`<h2>Vendre à un ami</h2><p>Choisissez le supporter à qui vous voulez vendre ce billet (150 XRP).</p>
+    openModal(`<h2>Vendre à un ami</h2><p>Choisissez le supporter à qui vous voulez vendre ce billet 150 XRP (≈ ${eur(150)}), soit plus du double du prix facial.</p>
       <div class="friends">${users.map((u) => `<button class="friend" data-transfer-to="${esc(u.id)}" data-nft="${esc(b.dataset.transfer)}">${avatar(u)}<span>${esc(u.name)}</span></button>`).join("")}</div>
       <div class="actions"><button data-close>Annuler</button></div>`);
   }
@@ -467,7 +471,7 @@ pages.club = async () => {
             <label>Rang<input name="rang" type="number" min="1" max="40" value="8" required /></label>
             <label>Premier siège<input name="siege" type="number" min="1" value="1" required /></label>
             <label>Nombre de places<input name="count" type="number" min="1" max="20" value="4" required /></label>
-            <label>Prix facial (XRP)<input name="prix" type="number" min="1" value="25" required /></label>
+            <label>Prix facial (XRP)<input name="prix" type="number" min="1" value="25" required /><span class="eur" id="prix-eur">≈ ${eur(25)}</span></label>
           </div>
           <button class="primary">Émettre les billets</button>
         </form>
@@ -477,7 +481,7 @@ pages.club = async () => {
           <tbody>${tickets.length
             ? tickets
                 .slice(0, 40)
-                .map((t) => `<tr><td><b>${esc(t.tribune)}</b> · ${esc(t.bloc)} · R${esc(t.rang)} · S${esc(t.siege)}</td><td>${esc(t.prix)} XRP</td>
+                .map((t) => `<tr><td><b>${esc(t.tribune)}</b> · ${esc(t.bloc)} · R${esc(t.rang)} · S${esc(t.siege)}</td><td>${esc(t.prix)} XRP <span class="eur">≈ ${eur(t.prix)}</span></td>
                   <td>${esc(t.ownerName ?? "—")}</td><td>${statusBadge(t)}</td><td><a href="#/verify/${esc(t.nftId)}">Vérifier</a></td></tr>`)
                 .join("")
             : `<tr><td colspan="5" class="muted">Aucun billet émis.</td></tr>`}</tbody></table>
@@ -495,6 +499,8 @@ pages.club = async () => {
 };
 
 pages.club.after = () => {
+  const prix = $('#mint-form input[name="prix"]');
+  prix.addEventListener("input", () => ($("#prix-eur").textContent = `≈ ${eur(prix.value || 0)}`));
   $("#mint-form").addEventListener("submit", async (e) => {
     e.preventDefault();
     const body = Object.fromEntries(new FormData(e.target));
@@ -590,7 +596,7 @@ pages.verify.after = (id) => {
         <div class="status-line"><span class="big">${icon}</span><div><h2>${esc(v.status)}</h2>
         <span class="badge ${good ? "ok" : "ko"}">${v.official ? "Émis par le club officiel" : "Émetteur inconnu"}</span></div></div>
         <dl>
-          ${v.seat ? `<dt>Place</dt><dd>${esc(v.seat.tribune)} · Bloc ${esc(v.seat.bloc)} · Rang ${esc(v.seat.rang)} · Siège ${esc(v.seat.siege)}</dd><dt>Prix facial</dt><dd>${esc(v.seat.prix)} XRP</dd>` : ""}
+          ${v.seat ? `<dt>Place</dt><dd>${esc(v.seat.tribune)} · Bloc ${esc(v.seat.bloc)} · Rang ${esc(v.seat.rang)} · Siège ${esc(v.seat.siege)}</dd><dt>Prix facial</dt><dd>${money(v.seat.prix)}</dd>` : ""}
           <dt>Détenteur actuel</dt><dd>${v.owner ? `${esc(v.ownerName ?? "")} <code>${esc(v.owner)}</code>` : "Aucun (billet utilisé ou annulé)"}</dd>
           <dt>Revente</dt><dd>${v.transferable ? "Libre" : "Uniquement via la bourse officielle du club"}</dd>
           <dt>Émetteur</dt><dd><a class="mono" href="${EXPLORER}/accounts/${esc(v.issuer)}" target="_blank">${esc(v.issuer)} ↗</a></dd>

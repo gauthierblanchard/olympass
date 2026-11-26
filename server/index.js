@@ -35,7 +35,11 @@ const route = (fn) => async (req, res) => {
   }
 };
 
-app.get("/api/config", route(async () => ({ club: club.address, match: MATCH })));
+// Le XRP du Testnet n'a aucune valeur : taux fictif de démonstration, choisi pour qu'une place
+// à 25-40 XRP corresponde au prix réel d'une grande affiche (environ 50-100 €).
+const EUR_PER_XRP = Number(process.env.EUR_PER_XRP || 2.5);
+
+app.get("/api/config", route(async () => ({ club: club.address, match: MATCH, eurPerXrp: EUR_PER_XRP })));
 
 // ---------- Profils ----------
 

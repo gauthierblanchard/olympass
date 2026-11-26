@@ -72,6 +72,8 @@ npm start            # http://localhost:3000
 | Portique | Scan du QR présenté : entrée validée et billet brûlé, ou entrée refusée |
 | Vérifier | Contrôle public d'un billet à partir de son identifiant |
 
+Chaque montant en XRP est accompagné d'un équivalent en euros au **taux fictif de démo de 1 XRP = 2,50 €** (variable `EUR_PER_XRP`). Le XRP du Testnet n'a aucune valeur : ce taux sert seulement à rendre les prix lisibles (une place à 25-40 XRP correspond à 62-100 €).
+
 La vue 3D est une projection perspective calculée dans le navigateur à partir de la tribune, du bloc et du rang (`web/seatview.js`). Elle est indicative et n'utilise aucune donnée externe.
 
 **API REST** utilisée par l'interface :
