@@ -1,5 +1,16 @@
 // Olympass : interface web (accueil, connexion, supporter, club, portique, vérification).
 import { seatView3D } from "./seatview.js";
+import { crest } from "./crests.js";
+
+/** Bandeau du match sur fond de photo du Vélodrome. */
+function matchStrip(m, extra = "") {
+  return `<div class="match-strip">
+    <div class="team">${crest("OM", 64)}<span>Olympique de Marseille</span></div>
+    <div class="center"><div class="comp">${esc(m.competition)}</div><div class="kick">${esc(m.time)}</div>
+      <div class="when">${esc(fmtDate(m.date))}<br>${esc(m.stadium)}</div>${extra}</div>
+    <div class="team">${crest("PSG", 64)}<span>Paris Saint-Germain</span></div>
+  </div>`;
+}
 
 const $ = (s, root = document) => root.querySelector(s);
 const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -110,7 +121,7 @@ function ticketHTML(t, { actions = "", proof = true } = {}) {
     <div class="ticket">
       <div class="main">
         <div class="comp">${esc(m.competition)}</div>
-        <div class="teams">OM <span style="color:var(--sky-2)">vs</span> PSG</div>
+        <div class="teams">${crest("OM", 30)} OM <span style="color:var(--sky-2)">vs</span> PSG ${crest("PSG", 30)}</div>
         <div class="when">${esc(fmtDate(s.date || m.date))} · ${esc(m.time)} · ${esc(m.stadium)}</div>
         <div class="grid">
           <span>Tribune</span><span>Bloc</span><span>Rang</span><span>Siège</span>
@@ -171,9 +182,12 @@ pages.home = async () => {
       <button class="ghost" onclick="location.hash='#/verify'">Vérifier un billet</button>
     </div>
     <div class="match-banner">
-      <div class="vs">OM <span style="color:var(--sky-2)">—</span> PSG</div>
-      <div class="meta">${esc(m.competition)}<br>${esc(fmtDate(m.date))} · ${esc(m.time)} · ${esc(m.stadium)}</div>
+      ${crest("OM", 44)}
+      <div><div class="vs">OM <span style="color:var(--sky-2)">—</span> PSG</div>
+      <div class="meta">${esc(m.competition)} · ${esc(fmtDate(m.date))} · ${esc(m.time)}</div></div>
+      ${crest("PSG", 44)}
     </div>
+    <span class="photo-credit">Photo : Zakarie Faibis, CC BY-SA 4.0, Wikimedia Commons</span>
   </section>
 
   <div class="features">
@@ -196,13 +210,16 @@ pages.login = async () => {
   const users = await api("GET", "/users");
   return `
   <div class="auth">
-    <div class="card">
+    <div class="card" style="padding:0;overflow:hidden">
+      <div class="login-photo"><span class="photo-credit">Photo : Zakarie Faibis, CC BY-SA 4.0</span></div>
+      <div style="padding:24px">
       <h1>Bon retour au Vélodrome</h1>
       <p class="muted">Choisissez votre profil supporter.</p>
       <div class="profiles">
         ${users
           .map((u) => `<button class="profile" data-login="${esc(u.id)}">${avatar(u, "lg")}${esc(u.name)}<small>${esc(shortAddr(u.address))}</small></button>`)
           .join("")}
+      </div>
       </div>
     </div>
     <form class="card signup" id="signup">
@@ -301,6 +318,7 @@ pages.fan = async () => {
         <a class="mono" href="${EXPLORER}/accounts/${esc(me.address)}" target="_blank">${esc(me.address)} ↗</a></div></div>
       <div class="card" style="padding:16px 22px"><div class="muted" style="font-size:.85rem">Solde du wallet</div><div class="balance" style="font-size:1.6rem;font-weight:800">${xrp(me.balance)}</div></div>
     </div>
+    ${matchStrip(state.config.match)}
     <div class="tabs">
       <button data-tab="sale" class="${state.fanTab === "sale" ? "active" : ""}">Billetterie<span class="count">${sale.length}</span></button>
       <button data-tab="mine" class="${state.fanTab === "mine" ? "active" : ""}">Mes billets<span class="count">${mine.length}</span></button>

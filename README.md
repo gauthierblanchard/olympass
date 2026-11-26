@@ -135,3 +135,8 @@ Elles changent à chaque `npm run setup -- --reset`. Elles sont affichées par `
 | Nassim | `rMVzD2i59QivJZCm8H1zig2zS6AUrmQMA2` |
 | Inès | `rshPTfz6jNNFQdvVapfQEZkrTLJW81Nue8` |
 | Enzo | `rpeZ8g8UMG5AUJyBxdkXCL3Q5wNCNXtTfz` |
+
+## Crédits
+
+- Photo du stade : [« Stade Vélodrome 1 »](https://commons.wikimedia.org/wiki/File:Stade_V%C3%A9lodrome_1.jpg), Zakarie Faibis, licence [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), via Wikimedia Commons (`web/img/velodrome.jpg`, redimensionnée en 1920 px).
+- Écussons : créations stylisées aux couleurs des clubs (`web/crests.js`), pas les logos officiels. Projet étudiant sans lien avec l'Olympique de Marseille ni le Paris Saint-Germain.
