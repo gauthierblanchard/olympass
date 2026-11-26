@@ -42,31 +42,48 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
  */
 export async function submit(tx, wallet) {
   const c = await getClient();
-  const prepared = await c.autofill(tx);
+  const sent = await signAndSend(c, await c.autofill(tx), wallet);
+  return waitValidated(c, sent);
+}
+
+/**
+ * Soumet plusieurs transactions d'un même compte d'affilée (numéros de séquence consécutifs)
+ * puis attend leur validation en parallèle : 10 billets sont émis en quelques secondes.
+ */
+export async function submitMany(txs, wallet) {
+  const c = await getClient();
+  const info = await c.request({ command: "account_info", account: wallet.address, ledger_index: "current" });
+  let seq = info.result.account_data.Sequence;
+  const sent = [];
+  for (const tx of txs) sent.push(await signAndSend(c, await c.autofill({ ...tx, Sequence: seq++ }), wallet));
+  return Promise.all(sent.map((s) => waitValidated(c, s)));
+}
+
+async function signAndSend(c, prepared, wallet) {
   const signed = wallet.sign(prepared);
   const res = await c.request({ command: "submit", tx_blob: signed.tx_blob });
-  const prelim = res.result.engine_result;
+  return { prepared, hash: signed.hash, prelim: res.result.engine_result, message: res.result.engine_result_message };
+}
 
-  if (/^(tef|tem|tel)/.test(prelim)) {
-    return { ok: false, code: prelim, hash: signed.hash, message: res.result.engine_result_message };
-  }
+async function waitValidated(c, { prepared, hash, prelim, message }) {
+  if (/^(tef|tem|tel)/.test(prelim)) return { ok: false, code: prelim, hash, message };
 
   // tes, tec ou ter : on attend que la transaction soit dans un ledger validé.
   for (;;) {
     await sleep(1000);
     try {
-      const tx = await c.request({ command: "tx", transaction: signed.hash });
+      const tx = await c.request({ command: "tx", transaction: hash });
       if (tx.result.validated) {
         const meta = tx.result.meta;
         const code = meta.TransactionResult;
-        return { ok: code === "tesSUCCESS", code, hash: signed.hash, meta };
+        return { ok: code === "tesSUCCESS", code, hash, meta };
       }
     } catch (e) {
       if (e?.data?.error !== "txnNotFound") throw e;
     }
     const current = await c.getLedgerIndex();
     if (current > prepared.LastLedgerSequence) {
-      return { ok: false, code: prelim, hash: signed.hash, message: "Transaction expirée" };
+      return { ok: false, code: prelim, hash, message: "Transaction expirée" };
     }
   }
 }

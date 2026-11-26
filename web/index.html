@@ -3,123 +3,35 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Olympass · Billetterie sur XRPL</title>
+  <title>Olympass · Le billet infalsifiable</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header>
-    <div class="brand">
+  <header class="topbar">
+    <a href="#/" class="brand">
       <span class="logo">O</span>
-      <div>
-        <strong>Olympass</strong>
-        <small>Billetterie anti-fraude sur XRPL Testnet</small>
-      </div>
-    </div>
-    <nav id="tabs">
-      <button data-view="club" class="active">Club</button>
-      <button data-view="supporter">Supporter</button>
-      <button data-view="gate">Portique</button>
-      <button data-view="verify">Vérifier</button>
+      <span>Olympass</span>
+    </a>
+    <nav>
+      <a href="#/fan" data-route="fan">Billetterie</a>
+      <a href="#/club" data-route="club">Club</a>
+      <a href="#/gate" data-route="gate">Portique</a>
+      <a href="#/verify" data-route="verify">Vérifier un billet</a>
     </nav>
+    <div id="user-chip" class="user-chip"></div>
   </header>
 
-  <main>
-    <div class="views">
-      <!-- CLUB -->
-      <section id="view-club" class="view active">
-        <h1>Espace club</h1>
-        <p class="lead">Émettez des billets NFT non transférables. L'adresse du club est l'émetteur officiel :
-          <a id="club-link" target="_blank"><code id="club-address">…</code></a></p>
+  <main id="app"></main>
 
-        <form id="mint-form" class="card">
-          <h2>Émettre un billet</h2>
-          <div class="grid">
-            <label>Match<input name="match" value="OM-PSG" required /></label>
-            <label>Date<input name="date" type="date" value="2026-12-13" required /></label>
-            <label>Tribune
-              <select name="tribune">
-                <option>Ganay</option><option>Jean-Bouin</option><option>Virage Nord</option><option>Virage Sud</option>
-              </select>
-            </label>
-            <label>Bloc<input name="bloc" value="G12" required /></label>
-            <label>Rang<input name="rang" type="number" value="8" min="1" required /></label>
-            <label>Siège<input name="siege" type="number" value="14" min="1" required /></label>
-            <label>Prix facial (XRP)<input name="prix" type="number" value="25" min="1" required /></label>
-          </div>
-          <button type="submit" class="primary">Émettre le billet</button>
-        </form>
-
-        <div class="card">
-          <h2>Billets émis</h2>
-          <table>
-            <thead><tr><th>Place</th><th>Prix</th><th>Détenteur</th><th>Statut</th><th></th></tr></thead>
-            <tbody id="club-tickets"></tbody>
-          </table>
-        </div>
-      </section>
-
-      <!-- SUPPORTER -->
-      <section id="view-supporter" class="view">
-        <h1>Espace supporter</h1>
-        <p class="lead">Connecté en tant que
-          <select id="who"></select>
-          <a id="who-link" target="_blank"><code id="who-address"></code></a>
-        </p>
-
-        <div class="card">
-          <h2>Billets en vente au club</h2>
-          <div id="on-sale" class="tickets"></div>
-        </div>
-
-        <div class="card">
-          <h2>Mes billets <small>(lus sur le ledger)</small></h2>
-          <div id="my-tickets" class="tickets"></div>
-        </div>
-      </section>
-
-      <!-- PORTIQUE -->
-      <section id="view-gate" class="view">
-        <h1>Portique d'entrée</h1>
-        <p class="lead">Le contrôleur scanne le QR du supporter. Signature, âge du QR et détention du billet sont vérifiés, puis le billet est brûlé.</p>
-        <div class="card">
-          <button id="scan-last" class="primary big">Scanner le QR présenté</button>
-          <details>
-            <summary>Coller un contenu de QR</summary>
-            <textarea id="qr-input" rows="4" placeholder='{"nftId":"…","ts":…,"publicKey":"…","signature":"…"}'></textarea>
-            <button id="scan-paste">Scanner ce contenu</button>
-          </details>
-        </div>
-        <div id="gate-result" class="gate-result"></div>
-      </section>
-
-      <!-- VERIFIER -->
-      <section id="view-verify" class="view">
-        <h1>Vérifier un billet</h1>
-        <p class="lead">Avant d'acheter à un particulier, n'importe qui peut vérifier un billet à partir de son identifiant.</p>
-        <form id="verify-form" class="card inline">
-          <input id="verify-id" placeholder="NFTokenID (64 caractères hexadécimaux)" required />
-          <button class="primary">Vérifier</button>
-        </form>
-        <div id="verify-result"></div>
-      </section>
-    </div>
-
-    <aside>
-      <h2>Journal des transactions</h2>
-      <p class="hint">Chaque action est une transaction réelle sur le XRPL Testnet.</p>
-      <ol id="log"></ol>
-    </aside>
-  </main>
-
-  <div id="modal" class="modal hidden">
-    <div class="modal-box">
-      <h2>QR d'entrée</h2>
-      <img id="qr-img" alt="QR code d'entrée" />
-      <p id="qr-timer"></p>
-      <p class="hint">Signé par votre wallet, valable 60 secondes : une capture d'écran revendue ne passe pas.</p>
-      <button id="modal-close">Fermer</button>
-    </div>
+  <div id="modal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-box" id="modal-box"></div>
   </div>
+
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+
+  <footer class="footer">
+    PoC Blockchain Challenge XRPL · Réseau XRPL Testnet · Cas d'usage fictif, sans lien avec les clubs cités
+  </footer>
 
   <script src="app.js" type="module"></script>
 </body>

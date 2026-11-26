@@ -1,31 +1,56 @@
-// Registre off-chain minimal : métadonnées de billets et dernier détenteur connu.
-// La source de vérité reste le ledger ; ce fichier sert d'index pour l'interface.
-// Aucune donnée personnelle : uniquement des adresses publiques et des infos de place.
+// Registre off-chain minimal : index des billets, journal d'activité et profils.
+// La source de vérité reste le ledger ; ces fichiers servent d'index pour l'interface.
+// Aucune donnée personnelle on-chain : le ledger ne voit que des adresses publiques.
 import fs from "node:fs";
 import path from "node:path";
 
-const FILE = path.resolve("data", "tickets.json");
+const DIR = path.resolve("data");
 
-function read() {
-  if (!fs.existsSync(FILE)) return { tickets: {} };
-  return JSON.parse(fs.readFileSync(FILE, "utf8"));
+function read(name, fallback) {
+  const file = path.join(DIR, `${name}.json`);
+  if (!fs.existsSync(file)) return fallback;
+  return JSON.parse(fs.readFileSync(file, "utf8"));
 }
 
-function write(db) {
-  fs.mkdirSync(path.dirname(FILE), { recursive: true });
-  fs.writeFileSync(FILE, JSON.stringify(db, null, 2));
+function write(name, value) {
+  fs.mkdirSync(DIR, { recursive: true });
+  fs.writeFileSync(path.join(DIR, `${name}.json`), JSON.stringify(value, null, 2));
 }
+
+// ---------- Billets ----------
 
 export function saveTicket(nftId, data) {
-  const db = read();
-  db.tickets[nftId] = { ...(db.tickets[nftId] || {}), ...data };
-  write(db);
+  const db = read("tickets", { tickets: {} });
+  db.tickets[nftId] = { ...(db.tickets[nftId] || {}), ...data, updatedAt: new Date().toISOString() };
+  write("tickets", db);
 }
 
 export function getTicket(nftId) {
-  return read().tickets[nftId] || null;
+  return read("tickets", { tickets: {} }).tickets[nftId] || null;
 }
 
 export function allTickets() {
-  return read().tickets;
+  return read("tickets", { tickets: {} }).tickets;
+}
+
+// ---------- Journal d'activité ----------
+
+export function addEvent(event) {
+  const events = read("events", []);
+  events.push({ at: new Date().toISOString(), ...event });
+  write("events", events.slice(-500));
+}
+
+export function allEvents() {
+  return read("events", []);
+}
+
+// ---------- Profils (PoC : wallet conservé côté serveur, voir README) ----------
+
+export function allUsers() {
+  return read("users", []);
+}
+
+export function saveUsers(users) {
+  write("users", users);
 }

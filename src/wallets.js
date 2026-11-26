@@ -2,7 +2,9 @@
 import "dotenv/config";
 import xrpl from "xrpl";
 
-export const ROLES = ["CLUB", "ALICE", "BOB", "CHARLIE"];
+// Le club et trois supporters de démonstration. Les autres supporters s'inscrivent depuis l'interface.
+export const ROLES = ["CLUB", "NASSIM", "INES", "ENZO"];
+export const DEMO_NAMES = { NASSIM: "Nassim", INES: "Inès", ENZO: "Enzo" };
 
 export function loadWallet(role) {
   const seed = process.env[`${role}_SEED`];

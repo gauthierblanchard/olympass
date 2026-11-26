@@ -1,7 +1,7 @@
 // Logique métier Olympass : un billet = un NFT XRPL émis par le club.
 import xrpl from "xrpl";
 import * as keypairs from "ripple-keypairs";
-import { getClient, submit } from "./xrpl-client.js";
+import { getClient, submit, submitMany } from "./xrpl-client.js";
 import { saveTicket, getTicket, allTickets } from "./store.js";
 
 // Drapeaux du billet : brûlable par le club (contrôle d'accès, annulation) et payable en XRP uniquement.
@@ -55,6 +55,25 @@ export async function mintTicket(club, seat, matchTaxon = 1) {
   const nftId = r.meta.nftoken_id ?? xrpl.getNFTokenID(r.meta);
   saveTicket(nftId, { ...seat, owner: club.address, status: "en vente", mintTx: r.hash });
   return { nftId, hash: r.hash };
+}
+
+/** Émet plusieurs billets d'un coup (sièges consécutifs à partir de seat.siege). */
+export async function mintBatch(club, seat, count, matchTaxon = 1) {
+  const seats = Array.from({ length: count }, (_, i) => ({ ...seat, siege: Number(seat.siege) + i }));
+  const txs = seats.map((s) => ({
+    TransactionType: "NFTokenMint",
+    Account: club.address,
+    NFTokenTaxon: matchTaxon,
+    Flags: TICKET_FLAGS,
+    URI: encodeMetadata(s),
+  }));
+  const results = await submitMany(txs, club);
+  return results.map((r, i) => {
+    if (!r.ok) return { ok: false, code: r.code, seat: seats[i] };
+    const nftId = r.meta.nftoken_id ?? xrpl.getNFTokenID(r.meta);
+    saveTicket(nftId, { ...seats[i], owner: club.address, status: "en vente", mintTx: r.hash });
+    return { ok: true, nftId, hash: r.hash, seat: seats[i] };
+  });
 }
 
 // ---------- 2. Vente du club à un supporter (échange atomique billet contre XRP) ----------

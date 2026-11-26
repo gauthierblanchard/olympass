@@ -1,4 +1,4 @@
-// Crée et alimente les wallets de test (club, Alice, Bob, Charlie) via le faucet Testnet.
+// Crée et alimente les wallets de test (club et supporters de démo Nassim, Inès, Enzo) via le faucet Testnet.
 // Les seeds sont écrites dans .env (ignoré par Git). Relancer avec --reset après une remise à zéro du Testnet.
 import "dotenv/config";
 import fs from "node:fs";
