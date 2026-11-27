@@ -66,7 +66,8 @@ npm start            # http://localhost:3000
 | --- | --- |
 | Accueil | Présentation du concept et accès aux espaces |
 | Connexion | Choisir un profil existant ou **créer un compte** : un wallet Testnet est généré et crédité de 100 XRP par le faucet |
-| Billetterie | Plan du Vélodrome filtrable par tribune, achat d'une place, **vue 3D depuis la place** |
+| Billetterie | **Stade 3D navigable** : tourner, zoomer, voler vers une tribune, cliquer sur un siège, voir le terrain depuis la place, acheter. Vue « Plan et liste » en alternative |
+| Mes billets | Sous-onglets **Disponibles** et **Utilisés** : un billet brûlé au portique reste visible avec la preuve de la transaction NFTokenBurn |
 | Mes billets | Billet officiel, QR d'entrée signé (60 s), vue 3D, revente au club, vente directe à un ami (bloquée par le ledger) |
 | Club | Indicateurs (émis, vendus, reventes, entrées, fraudes bloquées), émission groupée de places, activité en direct |
 | Portique | Scan du QR présenté : entrée validée et billet brûlé, ou entrée refusée |
@@ -74,7 +75,7 @@ npm start            # http://localhost:3000
 
 Chaque montant en XRP est accompagné d'un équivalent en euros au **taux fictif de démo de 1 XRP = 2,50 €** (variable `EUR_PER_XRP`). Le XRP du Testnet n'a aucune valeur : ce taux sert seulement à rendre les prix lisibles (une place à 25-40 XRP correspond à 62-100 €).
 
-La vue 3D est une projection perspective calculée dans le navigateur à partir de la tribune, du bloc et du rang (`web/seatview.js`). Elle est indicative et n'utilise aucune donnée externe.
+Le stade 3D (`web/stadium3d.js`, three.js servi en local) est une **modélisation originale** inspirée de l'Orange Vélodrome : quatre tribunes en gradins, environ 14 000 sièges, toit ondulé, panneaux LED. Aucun modèle 3D libre du stade n'existant, toute la géométrie est générée par le code. Chaque billet en vente est placé sur un siège selon sa tribune, son bloc, son rang et son numéro ; la position est indicative. Si le navigateur ne gère pas WebGL, l'application revient au plan 2D (`web/seatview.js`).
 
 **API REST** utilisée par l'interface :
 

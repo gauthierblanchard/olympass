@@ -17,7 +17,7 @@ const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(
 const EXPLORER = "https://testnet.xrpl.org";
 const TRIBUNES = ["Jean-Bouin", "Ganay", "Virage Nord", "Virage Sud"];
 
-const state = { config: null, me: null, fanTab: "sale", mineTab: "active", standFilter: null, clubTimer: null };
+const state = { config: null, me: null, fanTab: "sale", mineTab: "active", saleView: "3d", s3d: null, s3dModal: null, standFilter: null, clubTimer: null };
 
 // ---------- Utilitaires ----------
 
@@ -77,6 +77,8 @@ function openModal(html) {
 function closeModal() {
   $("#modal").classList.add("hidden");
   clearInterval(state.qrTimer);
+  state.s3dModal?.dispose();
+  state.s3dModal = null;
 }
 $("#modal").addEventListener("click", (e) => {
   if (e.target.id === "modal" || e.target.closest("[data-close]")) closeModal();
@@ -281,7 +283,21 @@ pages.fan = async () => {
   const counts = Object.fromEntries(TRIBUNES.map((t) => [t, sale.filter((x) => x.seat?.tribune === t).length]));
   const filtered = state.standFilter ? sale.filter((x) => x.seat?.tribune === state.standFilter) : sale;
 
-  const saleHTML = `
+  const viewToggle = `<div class="view-toggle">
+      <button data-saleview="3d" class="${state.saleView === "3d" ? "active" : ""}">Stade 3D</button>
+      <button data-saleview="list" class="${state.saleView === "list" ? "active" : ""}">Plan et liste</button>
+    </div>`;
+  const s3dHTML = `
+    <div class="s3d-wrap">
+      <div class="s3d" id="s3d">
+        <div class="s3d-hud">Glisser pour tourner · Molette pour zoomer · Clic droit pour déplacer · Cliquez sur un siège</div>
+        <div class="s3d-pov hidden" id="s3d-pov"><span id="s3d-pov-label"></span><button data-s3d="overview">Quitter la vue</button></div>
+        <div class="s3d-tip hidden" id="s3d-tip"></div>
+        <div class="s3d-loading" id="s3d-loading"><span class="spinner"></span>Construction du stade…</div>
+      </div>
+      <aside class="card s3d-panel" id="s3d-panel"></aside>
+    </div>`;
+  const listHTML = `
     <div class="sale-layout">
       <div class="card stadium-card">
         <h3>Orange Vélodrome</h3>
@@ -307,6 +323,7 @@ pages.fan = async () => {
           : `<div class="empty">Aucune place disponible${state.standFilter ? ` en ${esc(state.standFilter)}` : ""} pour le moment.</div>`}
       </div>
     </div>`;
+  const saleHTML = viewToggle + (state.saleView === "3d" ? s3dHTML : listHTML);
 
   const fmtUsed = (iso) =>
     iso ? new Date(iso).toLocaleString("fr-FR", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" }) : "";
@@ -360,6 +377,8 @@ pages.fan = async () => {
 pages.fan.after = () => {
   document.querySelectorAll("[data-tab]").forEach((b) => b.addEventListener("click", () => ((state.fanTab = b.dataset.tab), render())));
   document.querySelectorAll("[data-mtab]").forEach((b) => b.addEventListener("click", () => ((state.mineTab = b.dataset.mtab), render())));
+  document.querySelectorAll("[data-saleview]").forEach((b) => b.addEventListener("click", () => ((state.saleView = b.dataset.saleview), render())));
+  if (state.fanTab === "sale" && state.saleView === "3d") mountStadium();
   document.querySelectorAll("[data-stand]").forEach((g) =>
     g.addEventListener("click", () => ((state.standFilter = state.standFilter === g.dataset.stand ? null : g.dataset.stand), render())),
   );
@@ -374,7 +393,18 @@ document.addEventListener("click", async (e) => {
   if (!b) return;
   const me = state.me;
 
-  if (b.dataset.view3d) {
+  if (b.dataset.view3d && (await import("./stadium3d.js")).webglAvailable()) {
+    const t = findTicket(b.dataset.view3d);
+    const s = t.seat;
+    openModal(`<h2>Vue depuis votre place</h2>
+      <p>${esc(s.tribune)} · Bloc ${esc(s.bloc)} · Rang ${esc(s.rang)} · Siège ${esc(s.siege)}</p>
+      <div class="s3d s3d-modal" id="s3d-modal"><div class="s3d-hud">Glissez pour regarder autour de vous</div></div>
+      <div class="actions"><button data-close>Fermer</button></div>`);
+    $("#modal-box").style.width = "min(920px, 100%)";
+    const { createStadium } = await import("./stadium3d.js");
+    state.s3dModal = createStadium($("#s3d-modal"), { sale: state.sale || [], mine: state.mine || [] });
+    setTimeout(() => state.s3dModal?.showTicket(t.nftId, { pov: true }), 250);
+  } else if (b.dataset.view3d) {
     const t = findTicket(b.dataset.view3d);
     const s = t.seat;
     openModal(`<h2>Vue depuis votre place</h2>
@@ -467,6 +497,126 @@ async function refreshMe() {
   renderUserChip();
   render();
 }
+
+// ---------- Stade 3D (billetterie) ----------
+
+const STAND_NAMES = ["Jean-Bouin", "Ganay", "Virage Nord", "Virage Sud"];
+
+function s3dPanel(info) {
+  const panel = $("#s3d-panel");
+  if (!panel) return;
+  const sale = state.sale || [];
+  if (!info) {
+    panel.innerHTML = `
+      <span class="badge">Orange Vélodrome</span>
+      <h3 style="margin:10px 0 6px">Choisissez votre place</h3>
+      <p class="muted" style="margin:0 0 14px;font-size:.9rem">Naviguez dans le stade et cliquez sur un siège. Les places en vente sont signalées par un repère vert.</p>
+      <div class="s3d-legend">
+        <span><i style="background:#2ee6a6"></i>En vente</span>
+        <span><i style="background:#f2b544"></i>Vos places</span>
+        <span><i style="background:#3f6f96"></i>Indisponible</span>
+      </div>
+      <div class="s3d-stands">
+        ${STAND_NAMES.map((n) => `<button data-s3d-stand="${n}"><b>${n}</b><small>${sale.filter((t) => t.seat?.tribune === n).length} en vente</small></button>`).join("")}
+      </div>
+      <button class="ghost block" data-s3d="overview" style="margin-top:12px">Vue d'ensemble</button>`;
+    return;
+  }
+  const statusBadge = {
+    sale: `<span class="badge ok">En vente</span>`,
+    mine: `<span class="badge gold">Votre place</span>`,
+    unavailable: `<span class="badge">Indisponible</span>`,
+  }[info.status];
+  panel.innerHTML = `
+    <div>${statusBadge}</div>
+    <h3 style="margin:10px 0 2px">${esc(info.tribune)}</h3>
+    <div class="s3d-seat">
+      <div><span>Bloc</span><b>${esc(info.bloc)}</b></div>
+      <div><span>Rang</span><b>${esc(info.rang)}</b></div>
+      <div><span>Siège</span><b>${esc(info.siege)}</b></div>
+    </div>
+    ${info.status === "sale" ? `<div class="s3d-price">${esc(info.prix)} XRP <span class="eur">≈ ${eur(info.prix)}</span></div>
+      <p class="muted" style="font-size:.82rem;margin:4px 0 14px">Billet officiel émis par le club · paiement et billet échangés en une seule transaction</p>` : ""}
+    ${info.status === "unavailable" ? `<p class="muted" style="font-size:.88rem">Cette place n'est pas en vente. Cherchez les repères verts pour trouver une place disponible.</p>` : ""}
+    <div class="s3d-actions">
+      <button class="dark block" data-s3d="pov">Voir le terrain depuis cette place</button>
+      ${info.status === "sale" ? `<button class="primary block" data-buy="${esc(info.nftId)}">Acheter ${esc(info.prix)} XRP</button>` : ""}
+      ${info.status === "mine" ? `<button class="primary block" data-qr="${esc(info.nftId)}">Afficher mon QR</button>` : ""}
+      <button class="ghost block" data-s3d="clear">Choisir une autre place</button>
+    </div>`;
+}
+
+function s3dTip(info) {
+  const tip = $("#s3d-tip");
+  if (!tip) return;
+  if (!info) return tip.classList.add("hidden");
+  const box = $("#s3d").getBoundingClientRect();
+  const extra =
+    info.status === "sale"
+      ? `<br><span style="color:#2ee6a6">En vente · ${esc(info.prix)} XRP (≈ ${eur(info.prix)})</span>`
+      : info.status === "mine"
+        ? `<br><span style="color:#f2b544">Votre place</span>`
+        : "";
+  tip.innerHTML = `<b>${esc(info.tribune)}</b> · Bloc ${esc(info.bloc)} · Rang ${esc(info.rang)} · Siège ${esc(info.siege)}${extra}`;
+  tip.style.left = `${info.x - box.left + 14}px`;
+  tip.style.top = `${info.y - box.top + 14}px`;
+  tip.classList.remove("hidden");
+}
+
+function s3dPovLabel(info) {
+  const bar = $("#s3d-pov");
+  if (!bar) return;
+  bar.classList.toggle("hidden", !info);
+  if (info) $("#s3d-pov-label").textContent = `Vue depuis ${info.tribune} · Bloc ${info.bloc} · Rang ${info.rang} · Siège ${info.siege} — glissez pour regarder autour de vous`;
+}
+
+async function mountStadium() {
+  const el = $("#s3d");
+  if (!el) return;
+  const mod = await import("./stadium3d.js");
+  if (!mod.webglAvailable()) {
+    state.saleView = "list";
+    toast("Votre navigateur ne prend pas en charge la 3D : affichage du plan.", "ko");
+    return render();
+  }
+  if (!$("#s3d") || state.s3d) return;
+  let current = null;
+  state.s3d = mod.createStadium(el, {
+    sale: state.sale || [],
+    mine: state.mine || [],
+    onSelect: (info) => {
+      current = info;
+      s3dPovLabel(null);
+      s3dPanel(info);
+    },
+    onHover: s3dTip,
+  });
+  $("#s3d-loading")?.remove();
+  s3dPanel(null);
+  state.s3dCurrent = () => current;
+}
+
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-s3d], [data-s3d-stand]");
+  if (!b || !state.s3d) return;
+  const s3d = state.s3d;
+  const cur = state.s3dCurrent?.();
+  if (b.dataset.s3dStand) s3d.focusStand(b.dataset.s3dStand);
+  if (b.dataset.s3d === "overview") {
+    s3d.overview();
+    s3dPovLabel(null);
+  }
+  if (b.dataset.s3d === "pov" && cur) {
+    s3d.viewFromSeat(cur.index);
+    s3dPovLabel(cur);
+  }
+  if (b.dataset.s3d === "clear") {
+    s3dPovLabel(null);
+    s3d.overview();
+    s3dPanel(null);
+  }
+});
+
 
 // ---------- Club ----------
 
@@ -648,6 +798,8 @@ async function render() {
   const page = pages[name] || pages.home;
   document.querySelectorAll(".topbar nav a").forEach((a) => a.classList.toggle("active", a.dataset.route === name));
   if (name !== "club") clearInterval(state.clubTimer);
+  state.s3d?.dispose();
+  state.s3d = null;
   try {
     const html = await page(arg);
     if (route() !== name) return;

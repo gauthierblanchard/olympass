@@ -28,6 +28,8 @@ app.use(express.json());
 app.use(express.static("web"));
 // Police Space Grotesk (licence SIL OFL 1.1), servie localement : la démo fonctionne hors ligne.
 app.use("/fonts", express.static("node_modules/@fontsource/space-grotesk/files"));
+// three.js servi en local pour le stade 3D (aucune dépendance à un CDN pendant la démo).
+app.use("/vendor/three", express.static("node_modules/three"));
 
 const route = (fn) => async (req, res) => {
   try {

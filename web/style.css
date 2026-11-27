@@ -283,3 +283,31 @@ th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: u
 h1, h2, h3, .hero h1, .kpi .v, .match-strip .kick, .ticket .teams, .verdict h2, .modal-box h2, .seat-row .price, .wallet-card .balance, .fan-head .balance {
   font-family: var(--display); letter-spacing: -0.02em; }
 .hero h1 { letter-spacing: -0.035em; }
+
+/* ---------- Stade 3D ---------- */
+.view-toggle { display: inline-flex; gap: 6px; margin: 4px 0 16px; padding: 4px; background: #fff; border: 1px solid var(--line); border-radius: 999px; }
+.view-toggle button { border: 0; padding: 7px 16px; font-size: 0.9rem; }
+.view-toggle button.active { background: linear-gradient(90deg, #2aa7df, #1c5fd6); color: #fff; }
+.s3d-wrap { display: grid; grid-template-columns: 1fr 320px; gap: 18px; align-items: stretch; }
+@media (max-width: 980px) { .s3d-wrap { grid-template-columns: 1fr; } }
+.s3d { position: relative; height: 640px; border-radius: 22px; overflow: hidden; background: radial-gradient(circle at 50% 20%, #1d3f6e, #0b1f3a 70%); box-shadow: var(--shadow); }
+.s3d canvas { display: block; width: 100% !important; height: 100% !important; cursor: grab; }
+.s3d canvas:active { cursor: grabbing; }
+.s3d-modal { height: 460px; margin-top: 12px; }
+.s3d-hud { position: absolute; left: 14px; top: 14px; z-index: 2; padding: 7px 12px; border-radius: 999px; background: rgba(11, 31, 58, 0.72); color: #c9d6e6; font-size: 0.78rem; backdrop-filter: blur(6px); pointer-events: none; }
+.s3d-tip { position: absolute; z-index: 3; padding: 8px 12px; border-radius: 12px; background: rgba(11, 31, 58, 0.92); color: #fff; font-size: 0.82rem; pointer-events: none; box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3); white-space: nowrap; }
+.s3d-pov { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 3; display: flex; align-items: center; gap: 12px; padding: 8px 8px 8px 16px; border-radius: 999px; background: rgba(11, 31, 58, 0.9); color: #fff; font-size: 0.85rem; max-width: calc(100% - 32px); }
+.s3d-pov button { padding: 6px 14px; font-size: 0.82rem; }
+.s3d-loading { position: absolute; inset: 0; display: grid; place-items: center; color: #c9d6e6; }
+.s3d-panel { display: flex; flex-direction: column; }
+.s3d-legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 0.8rem; color: var(--muted); margin-bottom: 14px; }
+.s3d-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; }
+.s3d-stands { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.s3d-stands button { display: flex; flex-direction: column; align-items: flex-start; border-radius: 14px; padding: 10px 12px; text-align: left; }
+.s3d-stands small { color: var(--muted); font-weight: 500; }
+.s3d-seat { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 14px 0; }
+.s3d-seat div { background: var(--ice); border-radius: 12px; padding: 10px; text-align: center; }
+.s3d-seat span { display: block; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.s3d-seat b { font-family: var(--display); font-size: 1.4rem; }
+.s3d-price { font-family: var(--display); font-size: 1.7rem; font-weight: 700; }
+.s3d-actions { display: grid; gap: 8px; margin-top: auto; padding-top: 12px; }

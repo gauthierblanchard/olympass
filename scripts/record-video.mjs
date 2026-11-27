@@ -181,6 +181,8 @@ try {
   // 4. Choisir sa place et la voir en 3D
   await scrollTo(page, ".stadium-card", 90);
   await caption(page, "Billetterie", "Le plan du stade montre les places disponibles. On filtre sur le Virage Sud.", 1200);
+  await click(page, '[data-saleview="list"]');
+  await sleep(1200);
   await click(page, '[data-stand="Virage Sud"]');
   await sleep(1200);
   await click(page, "[data-view3d]");
