@@ -592,6 +592,7 @@ async function mountStadium() {
     onHover: s3dTip,
   });
   $("#s3d-loading")?.remove();
+  window.__olympassStadium = state.s3d; // accès pour les enregistrements automatisés (scripts/record-*.mjs)
   s3dPanel(null);
   state.s3dCurrent = () => current;
 }
