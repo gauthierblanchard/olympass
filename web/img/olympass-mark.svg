@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-label="Olympass">
+  <defs>
+    <linearGradient id="olp-g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5fd0f5"/>
+      <stop offset="0.55" stop-color="#2aa7df"/>
+      <stop offset="1" stop-color="#1c5fd6"/>
+    </linearGradient>
+    <!-- Ticket : carré arrondi avec deux encoches de perforation sur les côtés -->
+    <mask id="olp-m">
+      <rect width="48" height="48" rx="13" fill="#fff"/>
+      <circle cx="0" cy="24" r="5.5" fill="#000"/>
+      <circle cx="48" cy="24" r="5.5" fill="#000"/>
+    </mask>
+  </defs>
+  <rect width="48" height="48" rx="13" fill="url(#olp-g)" mask="url(#olp-m)"/>
+  <!-- Le « O » : un anneau ouvert, comme un billet qu'on valide -->
+  <path d="M33.2 15.6 A12.5 12.5 0 1 0 36.5 24" fill="none" stroke="#fff" stroke-width="5.2" stroke-linecap="round"/>
+  <!-- Le nœud du registre : un losange qui « ferme » l'anneau -->
+  <rect x="33.4" y="9.6" width="7.2" height="7.2" rx="1.6" transform="rotate(45 37 13.2)" fill="#fff"/>
+  <circle cx="24" cy="24" r="3.2" fill="#fff" opacity=".9"/>
+</svg>

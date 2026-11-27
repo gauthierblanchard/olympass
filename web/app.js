@@ -17,7 +17,7 @@ const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(
 const EXPLORER = "https://testnet.xrpl.org";
 const TRIBUNES = ["Jean-Bouin", "Ganay", "Virage Nord", "Virage Sud"];
 
-const state = { config: null, me: null, fanTab: "sale", standFilter: null, clubTimer: null };
+const state = { config: null, me: null, fanTab: "sale", mineTab: "active", standFilter: null, clubTimer: null };
 
 // ---------- Utilitaires ----------
 
@@ -118,11 +118,12 @@ document.addEventListener("click", (e) => {
 
 // ---------- Composants ----------
 
-function ticketHTML(t, { actions = "", proof = true } = {}) {
+function ticketHTML(t, { actions = "", proof = true, used = null } = {}) {
   const s = t.seat || {};
   const m = state.config.match;
   return `<div>
-    <div class="ticket">
+    <div class="ticket${used ? " used" : ""}">
+      ${used ? `<div class="stamp">Utilisé<small>${esc(used)}</small></div>` : ""}
       <div class="main">
         <div class="comp">${esc(m.competition)}</div>
         <div class="teams">${crest("OM", 30)} OM <span style="color:var(--sky-2)">vs</span> PSG ${crest("PSG", 30)}</div>
@@ -134,7 +135,7 @@ function ticketHTML(t, { actions = "", proof = true } = {}) {
       </div>
       <div class="stub">
         <span class="price">${esc(s.prix)}</span><small>XRP</small><small class="eur-stub">≈ ${eur(s.prix)}</small>
-        <span class="badge ok" title="Émis par l'adresse officielle du club">✓ Officiel</span>
+        ${used ? `<span class="badge ko">Brûlé</span>` : `<span class="badge ok" title="Émis par l'adresse officielle du club">✓ Officiel</span>`}
       </div>
     </div>
     ${proof ? `<div class="ticket-proof">NFT XRPL · <a class="mono" href="#/verify/${esc(t.nftId)}">${esc(t.nftId.slice(0, 10))}…${esc(t.nftId.slice(-6))}</a></div>` : ""}
@@ -270,7 +271,11 @@ pages.fan = async () => {
     return "";
   }
   const me = state.me;
-  const [sale, mine] = await Promise.all([api("GET", "/sale"), api("GET", `/users/${me.id}/tickets`)]);
+  const [sale, mine, used] = await Promise.all([
+    api("GET", "/sale"),
+    api("GET", `/users/${me.id}/tickets`),
+    api("GET", `/users/${me.id}/history`),
+  ]);
   state.sale = sale;
   state.mine = mine;
   const counts = Object.fromEntries(TRIBUNES.map((t) => [t, sale.filter((x) => x.seat?.tribune === t).length]));
@@ -303,7 +308,9 @@ pages.fan = async () => {
       </div>
     </div>`;
 
-  const mineHTML = mine.length
+  const fmtUsed = (iso) =>
+    iso ? new Date(iso).toLocaleString("fr-FR", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" }) : "";
+  const availableHTML = mine.length
     ? `<div class="tickets">${mine
         .map((t) =>
           ticketHTML(t, {
@@ -314,7 +321,27 @@ pages.fan = async () => {
           }),
         )
         .join("")}</div>`
-    : `<div class="empty">Vous n'avez pas encore de billet. Rendez-vous dans la billetterie !</div>`;
+    : `<div class="empty">Aucun billet disponible. Rendez-vous dans la billetterie !</div>`;
+
+  const usedHTML = used.length
+    ? `<p class="muted" style="margin:0 0 16px">Ces billets ont été brûlés au portique : le NFT n'existe plus, mais la transaction NFTokenBurn reste inscrite pour toujours sur le ledger.</p>
+       <div class="tickets">${used
+         .map((t) =>
+           ticketHTML(t, {
+             used: `le ${fmtUsed(t.usedAt)}`,
+             actions: `<a class="btn-link" href="${esc(t.burnTx)}" target="_blank">Preuve sur le ledger ↗</a>
+               <a class="btn-link" href="#/verify/${esc(t.nftId)}">Vérifier le billet</a>`,
+           }),
+         )
+         .join("")}</div>`
+    : `<div class="empty">Aucun billet utilisé pour l'instant. Après votre passage au portique, vos billets apparaîtront ici.</div>`;
+
+  const mineHTML = `
+    <div class="subtabs">
+      <button data-mtab="active" class="${state.mineTab === "active" ? "active" : ""}">Disponibles<span class="count">${mine.length}</span></button>
+      <button data-mtab="used" class="${state.mineTab === "used" ? "active" : ""}">Utilisés<span class="count">${used.length}</span></button>
+    </div>
+    ${state.mineTab === "used" ? usedHTML : availableHTML}`;
 
   return `
     <div class="fan-head">
@@ -325,13 +352,14 @@ pages.fan = async () => {
     ${matchStrip(state.config.match)}
     <div class="tabs">
       <button data-tab="sale" class="${state.fanTab === "sale" ? "active" : ""}">Billetterie<span class="count">${sale.length}</span></button>
-      <button data-tab="mine" class="${state.fanTab === "mine" ? "active" : ""}">Mes billets<span class="count">${mine.length}</span></button>
+      <button data-tab="mine" class="${state.fanTab === "mine" ? "active" : ""}">Mes billets<span class="count">${mine.length + used.length}</span></button>
     </div>
     ${state.fanTab === "sale" ? saleHTML : mineHTML}`;
 };
 
 pages.fan.after = () => {
   document.querySelectorAll("[data-tab]").forEach((b) => b.addEventListener("click", () => ((state.fanTab = b.dataset.tab), render())));
+  document.querySelectorAll("[data-mtab]").forEach((b) => b.addEventListener("click", () => ((state.mineTab = b.dataset.mtab), render())));
   document.querySelectorAll("[data-stand]").forEach((g) =>
     g.addEventListener("click", () => ((state.standFilter = state.standFilter === g.dataset.stand ? null : g.dataset.stand), render())),
   );

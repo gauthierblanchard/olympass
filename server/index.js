@@ -26,6 +26,8 @@ const allAddresses = () => U.listUsers().map((u) => u.address);
 const app = express();
 app.use(express.json());
 app.use(express.static("web"));
+// Police Space Grotesk (licence SIL OFL 1.1), servie localement : la démo fonctionne hors ligne.
+app.use("/fonts", express.static("node_modules/@fontsource/space-grotesk/files"));
 
 const route = (fn) => async (req, res) => {
   try {
@@ -59,6 +61,12 @@ app.get("/api/users/:id", route(async (req) => {
 app.get("/api/users/:id/tickets", route(async (req) => {
   const u = U.findUser(req.params.id);
   return T.listTickets(u.address, club.address);
+}));
+
+// Billets utilisés : brûlés au portique, avec la preuve de la transaction NFTokenBurn.
+app.get("/api/users/:id/history", route(async (req) => {
+  const u = U.findUser(req.params.id);
+  return (await T.usedTicketsOf(u.address)).map((t) => ({ ...t, burnTx: explorerTx(t.burnTx) }));
 }));
 
 // ---------- Billetterie ----------

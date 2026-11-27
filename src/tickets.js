@@ -214,8 +214,38 @@ export async function burnAtEntry(club, nftId, ownerAddress) {
     club,
   );
   if (!r.ok) throw fail("NFTokenBurn", r);
-  saveTicket(nftId, { owner: null, status: "utilisé", burnTx: r.hash });
+  saveTicket(nftId, { owner: null, usedBy: ownerAddress, usedAt: new Date().toISOString(), status: "utilisé", burnTx: r.hash });
   return { hash: r.hash };
+}
+
+/**
+ * Billets utilisés (brûlés au portique) par une adresse.
+ * Le NFT n'existe plus, mais la transaction NFTokenBurn reste dans l'historique du ledger :
+ * pour les billets brûlés avant l'ajout du champ usedBy, on relit son champ Owner sur le ledger.
+ */
+export async function usedTicketsOf(address) {
+  const c = await getClient();
+  const out = [];
+  for (const [nftId, t] of Object.entries(allTickets())) {
+    if (t.status !== "utilisé" || !t.burnTx) continue;
+    let usedBy = t.usedBy;
+    let usedAt = t.usedAt;
+    if (!usedBy) {
+      try {
+        const tx = await c.request({ command: "tx", transaction: t.burnTx });
+        const body = tx.result.tx_json ?? tx.result;
+        usedBy = body.Owner;
+        usedAt = tx.result.close_time_iso ?? (body.date ? new Date((body.date + 946684800) * 1000).toISOString() : null);
+        saveTicket(nftId, { usedBy, usedAt });
+      } catch {
+        continue;
+      }
+    }
+    if (usedBy !== address) continue;
+    const { match, date, tribune, bloc, rang, siege, prix } = t;
+    out.push({ nftId, seat: { match, date, tribune, bloc, rang, siege, prix }, usedAt, burnTx: t.burnTx });
+  }
+  return out.sort((a, b) => String(b.usedAt).localeCompare(String(a.usedAt)));
 }
 
 export async function scanAtGate(club, proof) {
